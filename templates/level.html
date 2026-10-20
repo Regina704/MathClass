@@ -1,0 +1,147 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ level.title }}</title>
+    {% include "_theme_boot.html" %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="code-bg-page">
+    {% include "_code_background.html" %}
+    <main class="level-page">
+        <div class="level-runtime-shell">
+            <div class="level-topbar">
+                <a class="back-link" href="{{ url_for('admin_module_page' if current_user and current_user.role == 'admin' else 'module_page', module_id=level.module.id) }}">←</a>
+                <nav class="level-stepper">
+                    {% for block in level.blocks %}
+                        <a class="level-step {% if active_block and block.id == active_block.id %}active{% endif %} {% if block.progress and block.progress.status == 'completed' %}done{% endif %}"
+                           href="{{ url_for('level_page', level_id=level.id, block=block.id) }}"
+                           title="{{ block.title }}">
+                            {{ loop.index }}
+                        </a>
+                {% endfor %}
+                {% if current_user and current_user.role == "admin" %}
+                    <a class="level-step add" href="{{ url_for('admin_new_block', level_id=level.id) }}" title="Добавить задание">＋</a>
+                {% endif %}
+            </nav>
+            <button class="theme-switch site-theme-toggle" type="button" data-site-theme-toggle title="Сменить тему">☾</button>
+        </div>
+        </div>
+
+        {% if active_block %}
+            <div class="level-content-shell">
+                <section class="content-panel lesson-player">
+                    <div class="lesson-player-header">
+                        <div>
+                            <p class="eyebrow">{{ active_block.type }}</p>
+                            <h2>{{ active_block.title }}</h2>
+                        </div>
+                        {% if current_user and current_user.role == "admin" %}
+                            <div class="admin-actions">
+                                <a class="primary-link" href="{{ url_for('admin_edit_block', block_id=active_block.id) }}">Редактировать</a>
+                                <form method="post" action="{{ url_for('admin_delete_block', block_id=active_block.id) }}" onsubmit="return confirm('Удалить задание «{{ active_block.title }}»? Это действие нельзя отменить.');">
+                                    <button class="danger-link" type="submit">Удалить</button>
+                                </form>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% set block = active_block %}
+                    {% include "_lesson_block_content.html" %}
+                </section>
+            </div>
+        {% endif %}
+    </main>
+
+    {% if active_block and active_block.type in ["single_choice", "multiple_choice"] %}
+        <script>
+            window.CHOICE_CONFIG = {
+                blockId: {{ active_block.id }},
+                mode: {{ active_block.type|tojson }},
+                salt: {{ active_block.data.salt|tojson }},
+                answerHash: {{ active_block.data.answer_hash|tojson }},
+                maxAttempts: {{ active_block.data.max_attempts or 3 }}
+            };
+        </script>
+        <script src="{{ url_for('static', filename='choice.js') }}"></script>
+    {% endif %}
+    {% if active_block and active_block.type == "matching" %}
+        <script>
+            window.MATCHING_CONFIG = {
+                blockId: {{ active_block.id }},
+                salt: {{ active_block.data.salt|tojson }},
+                answerHash: {{ active_block.data.answer_hash|tojson }},
+                maxAttempts: {{ active_block.data.max_attempts or 3 }}
+            };
+        </script>
+        <script src="{{ url_for('static', filename='matching.js') }}"></script>
+    {% endif %}
+    {% if active_block and active_block.type == "math_answer" %}
+        <script>
+            window.MATH_ANSWER_CONFIG = {
+                blockId: {{ active_block.id }},
+                salt: {{ active_block.data.salt|tojson }},
+                answerHash: {{ active_block.data.answer_hash|tojson }},
+                maxAttempts: {{ active_block.data.max_attempts or 3 }}
+            };
+        </script>
+        <script src="{{ url_for('static', filename='math_answer.js') }}"></script>
+    {% endif %}
+    {% if active_block and active_block.type == "graph_plotter" %}
+        <script>
+            window.GRAPH_PLOTTER_CONFIG = {
+                blockId: {{ active_block.id }},
+                hasFormulaCheck: {{ "true" if active_block.data.correct_formula else "false" }}
+            };
+        </script>
+        <script src="{{ url_for('static', filename='graph_plotter.js') }}"></script>
+    {% endif %}
+    {% if active_block and active_block.type == "step_solution" %}
+        <script>
+            window.STEP_SOLUTION_CONFIG = {
+                blockId: {{ active_block.id }},
+                maxAttempts: {{ active_block.data.max_attempts or 3 }},
+                steps: [
+                    {% for step in active_block.data.steps|default([]) %}
+                        {
+                            label: {{ step.label|tojson }},
+                            description: {{ step.description|tojson }},
+                            placeholder: {{ step.placeholder|tojson }},
+                            answerHash: {{ step.answer_hash|tojson }}
+                        }{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                salt: {{ active_block.data.salt|tojson }}
+            };
+        </script>
+        <script src="{{ url_for('static', filename='step_solution.js') }}"></script>
+    {% endif %}
+    {% if active_block and active_block.type == "geometry_task" %}
+        <script>
+            window.GEOMETRY_TASK_CONFIG = {
+                blockId: {{ active_block.id }},
+                shape: {{ active_block.data.shape|tojson }},
+                params: {{ active_block.data.params|default({})|tojson }},
+                shapes: {{ active_block.data.shapes|default([])|tojson }},
+                salt: {{ active_block.data.salt|tojson }},
+                answerHash: {{ active_block.data.answer_hash|tojson }},
+                maxAttempts: {{ active_block.data.max_attempts or 3 }}
+            };
+        </script>
+        <script src="{{ url_for('static', filename='geometry_task.js') }}"></script>
+    {% endif %}
+    {% if active_block and active_block.type in ["theory", "presentation"] %}
+        <script>
+            window.READ_BLOCK_CONFIG = {
+                blockId: {{ active_block.id }},
+                nextUrl: {{ url_for('level_page', level_id=level.id, block=next_block.id)|tojson if next_block else "null" }}
+            };
+        </script>
+        <script src="{{ url_for('static', filename='read_block.js') }}"></script>
+    {% endif %}
+    {% if active_block and active_block.type == "presentation" %}
+        <script src="{{ url_for('static', filename='presentation.js') }}"></script>
+    {% endif %}
+    <script src="{{ url_for('static', filename='markdown_render.js') }}"></script>
+    <script src="{{ url_for('static', filename='site_ui.js') }}" defer></script>
+</body>
+</html>

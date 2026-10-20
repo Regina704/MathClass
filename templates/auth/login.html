@@ -1,0 +1,33 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Вход</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% include "_theme_boot.html" %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="code-bg-page">
+    {% include "_code_background.html" %}
+    <main class="auth-shell">
+        <section class="auth-card">
+            <p class="eyebrow">Математично</p>
+            <h1>Вход</h1>
+            {% if error %}
+                <p class="form-error">{{ error }}</p>
+            {% endif %}
+            <form method="post">
+                <label>Почта</label>
+                <input name="email" type="email" value="student@example.com" required>
+                <label>Пароль</label>
+                <input name="password" type="password" value="student123" required>
+                <button class="primary-link" type="submit">Войти</button>
+            </form>
+            <p class="muted-text">Админ: admin@example.com / admin123</p>
+            <a class="plain-link" href="{{ url_for('register') }}">Создать аккаунт ученика</a>
+        </section>
+    </main>
+</body>
+</html>

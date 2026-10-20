@@ -1,0 +1,607 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ "Редактировать блок" if block else "Новый блок" }}</title>
+    {% include "_theme_boot.html" %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="code-bg-page">
+    {% include "_code_background.html" %}
+    <main class="learning-shell">
+        {% include "_top_nav.html" %}
+        <section class="content-panel admin-form">
+            <a class="back-link" href="{{ url_for('admin_dashboard') }}">← Админка</a>
+            <div class="admin-form-head">
+                <h1>{{ "Редактировать блок" if block else "Новый блок" }}</h1>
+                {% if block %}
+                    <form method="post" action="{{ url_for('admin_delete_block', block_id=block.id) }}" onsubmit="return confirm('Удалить это задание? Это действие нельзя отменить.');">
+                        <button class="danger-link" type="submit">Удалить</button>
+                    </form>
+                {% endif %}
+            </div>
+            <form method="post" id="adminBlockForm">
+                {% set selected_type = block.type if block else "theory" %}
+                {% if not block %}
+                    <label>Уровень</label>
+                    <select name="level_id" required>
+                        {% for module in modules %}
+                            {% for lesson in module.lessons %}
+                                {% for level in lesson.levels %}
+                                    <option value="{{ level.id }}" {% if level_id and level.id == level_id %}selected{% endif %}>{{ module.title }} / {{ lesson.title }} / {{ level.title }}</option>
+                                {% endfor %}
+                            {% endfor %}
+                        {% endfor %}
+                    </select>
+                {% endif %}
+
+                <label>Тип</label>
+                <select name="type" id="blockType" required>
+                    {% for type in ["theory", "presentation", "single_choice", "multiple_choice", "matching", "math_answer", "graph_plotter", "step_solution", "geometry_task"] %}
+                        <option value="{{ type }}" {% if block and block.type == type %}selected{% endif %}>{{ type }}</option>
+                    {% endfor %}
+                </select>
+                <input type="hidden" name="salt" value="{{ block.data.salt if block and block.data.salt else '' }}">
+
+                <label>Название</label>
+                <input name="title" value="{{ block.title if block else '' }}" required>
+
+                <label id="contentLabel">Контент / текст задания</label>
+                <textarea name="content" id="contentField" rows="8">{{ block.content if block else '' }}</textarea>
+                <div class="admin-image-tools">
+                    <input type="file" id="contentImageInput" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
+                    <button class="secondary-link" type="button" id="contentImageButton">Вставить картинку</button>
+                    <span class="muted-text" id="contentImageStatus">Картинка вставится в текущую позицию курсора.</span>
+                </div>
+
+                <div class="admin-type-section{% if selected_type != 'presentation' %} is-hidden{% endif %}" data-types="presentation" {% if selected_type != 'presentation' %}hidden{% endif %}>
+                    <label>Google Slides URL</label>
+                    <input name="embed_url" placeholder="https://docs.google.com/presentation/d/.../edit" value="{{ block.data.embed_url if block and block.data.embed_url else '' }}">
+                    <p class="muted-text">Можно вставить обычную ссылку на Google Slides, сервер сам преобразует её в embed-ссылку.</p>
+                </div>
+
+                <div class="admin-subsection admin-type-section{% if selected_type not in ['single_choice', 'multiple_choice'] %} is-hidden{% endif %}" data-types="single_choice multiple_choice" {% if selected_type not in ['single_choice', 'multiple_choice'] %}hidden{% endif %}>
+                    <h2>Варианты ответа</h2>
+                    <p class="muted-text">Для single_choice выбери один правильный ответ, для multiple_choice можно выбрать несколько.</p>
+                    <label>Максимум попыток</label>
+                    <input name="max_attempts" type="number" min="1" max="10" value="{{ block.data.max_attempts if block and block.data.max_attempts else 3 }}">
+
+                    {% for i in range(6) %}
+                        {% set option = block.data.options[i] if block and block.data.options and i < block.data.options|length else None %}
+                        <div class="option-editor-row">
+                            <input name="option_text" placeholder="Текст варианта" value="{{ option.text if option else '' }}">
+                            <label class="inline-check">
+                                <input type="{{ 'radio' if selected_type == 'single_choice' else 'checkbox' }}" name="correct_option" value="{{ option.id if option else '' }}" data-correct-checkbox data-option-index="{{ i }}">
+                                Верный
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="admin-subsection admin-type-section{% if selected_type != 'matching' %} is-hidden{% endif %}" data-types="matching" {% if selected_type != 'matching' %}hidden{% endif %}>
+                    <h2>Matching пары</h2>
+                    <p class="muted-text">Пары для будущего блока сопоставления.</p>
+                    <label>Максимум попыток</label>
+                    <input name="max_attempts" type="number" min="1" max="10" value="{{ block.data.max_attempts if block and block.data.max_attempts else 3 }}">
+                    {% for i in range(6) %}
+                        {% set pair = block.data.pairs[i] if block and block.data.pairs and i < block.data.pairs|length else None %}
+                        <div class="option-editor-row matching-editor-row">
+                            <input name="match_left" placeholder="Левая часть" value="{{ pair.left if pair else '' }}">
+                            <input name="match_right" placeholder="Правая часть" value="{{ pair.right if pair else '' }}">
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="admin-subsection admin-type-section{% if selected_type != 'math_answer' %} is-hidden{% endif %}" data-types="math_answer" {% if selected_type != 'math_answer' %}hidden{% endif %}>
+                    <h2>Ответ числом или формулой</h2>
+                    <label>Правильный ответ</label>
+                    <input name="correct_answer" placeholder="Например: 6 или 3/4" value="{{ block.data.correct_answer if block and block.data.correct_answer else '' }}">
+                    <label>Подсказка под полем ответа</label>
+                    <input name="answer_hint" placeholder="Например: ответ можно записать числом" value="{{ block.data.hint if block and block.data.hint else '' }}">
+                    <label>Placeholder</label>
+                    <input name="answer_placeholder" placeholder="Например: x = 6" value="{{ block.data.placeholder if block and block.data.placeholder else '' }}">
+                    <label>Максимум попыток</label>
+                    <input name="max_attempts" type="number" min="1" max="10" value="{{ block.data.max_attempts if block and block.data.max_attempts else 3 }}">
+                </div>
+
+                <div class="admin-subsection admin-type-section{% if selected_type != 'graph_plotter' %} is-hidden{% endif %}" data-types="graph_plotter" {% if selected_type != 'graph_plotter' %}hidden{% endif %}>
+                    <h2>Построитель графика</h2>
+                    <label>Формула по умолчанию</label>
+                    <input name="default_formula" placeholder="Например: x^2 - 4" value="{{ block.data.default_formula if block and block.data.default_formula else 'x^2' }}">
+                    <label>Формула для проверки</label>
+                    <input name="correct_formula" placeholder="Например: 2*x + 1" value="{{ block.data.correct_formula if block and block.data.correct_formula else '' }}">
+                    <p class="muted-text">Если заполнить это поле, ученик сможет проверить, совпадает ли его формула с ожидаемым графиком.</p>
+                </div>
+
+                <div class="admin-subsection admin-type-section{% if selected_type != 'step_solution' %} is-hidden{% endif %}" data-types="step_solution" {% if selected_type != 'step_solution' %}hidden{% endif %}>
+                    <h2>Пошаговое решение</h2>
+                    <p class="muted-text">Оставь подпись пустой, если нужен режим без подсказок: ученик увидит только номер шага.</p>
+                    <label>Максимум попыток</label>
+                    <input name="max_attempts" type="number" min="1" max="10" value="{{ block.data.max_attempts if block and block.data.max_attempts else 3 }}">
+                    {% for i in range(6) %}
+                        {% set step = block.data.steps[i] if block and block.data.steps and i < block.data.steps|length else None %}
+                        <div class="step-editor-row">
+                            <input name="step_label" placeholder="Подпись шага: например, перенеси 5 вправо" value="{{ step.label if step else '' }}">
+                            <input name="step_description" placeholder="Короткое пояснение под подписью" value="{{ step.description if step else '' }}">
+                            <input name="step_placeholder" placeholder="Placeholder поля" value="{{ step.placeholder if step else '' }}">
+                            <input name="step_answer" placeholder="Правильная запись шага" value="{{ step.answer if step else '' }}">
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="admin-subsection admin-type-section{% if selected_type != 'geometry_task' %} is-hidden{% endif %}" data-types="geometry_task" {% if selected_type != 'geometry_task' %}hidden{% endif %}>
+                    <h2>Геометрическая задача</h2>
+                    <label>Фигура</label>
+                    <select name="geometry_shape">
+                        {% set shape = block.data.shape if block and block.data.shape else 'rectangle' %}
+                        <option value="rectangle" {% if shape == 'rectangle' %}selected{% endif %}>Прямоугольник</option>
+                        <option value="triangle" {% if shape == 'triangle' %}selected{% endif %}>Треугольник</option>
+                        <option value="circle" {% if shape == 'circle' %}selected{% endif %}>Круг</option>
+                        <option value="custom" {% if shape == 'custom' %}selected{% endif %}>Составная фигура</option>
+                    </select>
+                    <label>Параметры фигуры</label>
+                    <div class="option-editor-row matching-editor-row">
+                        <input name="geometry_param_a" id="geometryParamA" placeholder="a: длина / основание / радиус" value="{{ block.data.params.a if block and block.data.params else '' }}">
+                        <input name="geometry_param_b" id="geometryParamB" placeholder="b: ширина / высота" value="{{ block.data.params.b if block and block.data.params else '' }}">
+                    </div>
+                    <div class="geometry-editor" id="geometryEditor">
+                        <h3>Редактор составной фигуры</h3>
+                        <div class="graph-toolbar">
+                            <button class="secondary-link" type="button" data-shape-tool="rectangle">Прямоугольник</button>
+                            <button class="secondary-link" type="button" data-shape-tool="triangle">Треугольник</button>
+                            <button class="secondary-link" type="button" data-shape-tool="circle">Круг</button>
+                            <button class="secondary-link" type="button" data-shape-tool="line">Линия</button>
+                            <button class="secondary-link" type="button" data-shape-tool="label">Подпись</button>
+                            <button class="secondary-link" type="button" id="geometryUndoShape">Удалить последний</button>
+                            <button class="secondary-link" type="button" id="geometryClearShapes">Очистить</button>
+                        </div>
+                        <canvas id="geometryEditorCanvas" width="760" height="420"></canvas>
+                        <input type="hidden" name="geometry_shapes_json" id="geometryShapesJson" value="{{ block.data.shapes|default([])|tojson if block else '[]' }}">
+                        <p class="muted-text">Зажми мышь на холсте и потяни, чтобы построить фигуру. Начало и конец автоматически цепляются к ближайшим вершинам и пересечениям. Подписи добавляются кликом.</p>
+                    </div>
+                    <label>Подпись к ответу</label>
+                    <input name="geometry_answer_label" placeholder="Например: Площадь" value="{{ block.data.answer_label if block and block.data.answer_label else '' }}">
+                    <label>Правильный ответ</label>
+                    <input name="geometry_answer" placeholder="Например: 54" value="{{ block.data.correct_answer if block and block.data.correct_answer else '' }}">
+                    <label>Placeholder</label>
+                    <input name="geometry_placeholder" placeholder="Например: 54" value="{{ block.data.placeholder if block and block.data.placeholder else '' }}">
+                    <label>Максимум попыток</label>
+                    <input name="max_attempts" type="number" min="1" max="10" value="{{ block.data.max_attempts if block and block.data.max_attempts else 3 }}">
+                </div>
+
+                <button class="primary-link" type="submit">Сохранить</button>
+            </form>
+        </section>
+    </main>
+    <script>
+        const blockTypeSelect = document.getElementById('blockType');
+        const contentLabel = document.getElementById('contentLabel');
+        const contentField = document.getElementById('contentField');
+        const contentImageInput = document.getElementById('contentImageInput');
+        const contentImageButton = document.getElementById('contentImageButton');
+        const contentImageStatus = document.getElementById('contentImageStatus');
+        const geometryShapeSelect = document.querySelector('[name="geometry_shape"]');
+        const geometryParamA = document.getElementById('geometryParamA');
+        const geometryParamB = document.getElementById('geometryParamB');
+        const geometryEditor = document.getElementById('geometryEditor');
+        const geometryEditorCanvas = document.getElementById('geometryEditorCanvas');
+        const geometryShapesJson = document.getElementById('geometryShapesJson');
+        const typeContentMeta = {
+            theory: {
+                label: 'Текст теории',
+                placeholder: 'Материал, который ученик должен прочитать.'
+            },
+            presentation: {
+                label: 'Краткое описание презентации',
+                placeholder: 'Что ученик должен понять после просмотра презентации.'
+            },
+            single_choice: {
+                label: 'Вопрос',
+                placeholder: 'Вопрос для выбора одного правильного ответа.'
+            },
+            multiple_choice: {
+                label: 'Вопрос',
+                placeholder: 'Вопрос для выбора нескольких правильных ответов.'
+            },
+            matching: {
+                label: 'Формулировка задания',
+                placeholder: 'Что именно нужно соединить между собой.'
+            },
+            math_answer: {
+                label: 'Условие задачи',
+                placeholder: 'Опиши задачу, ответ на которую ученик введет в поле.'
+            },
+            graph_plotter: {
+                label: 'Инструкция к построителю',
+                placeholder: 'Объясни, какую формулу нужно построить или исследовать.'
+            },
+            step_solution: {
+                label: 'Условие уравнения',
+                placeholder: 'Например: Реши уравнение 3x - 4 = 11, заполняя шаги ниже.'
+            },
+            geometry_task: {
+                label: 'Условие геометрической задачи',
+                placeholder: 'Например: Найди площадь фигуры по заданным размерам.'
+            }
+        };
+        function syncTypeSections() {
+            const selectedType = blockTypeSelect.value;
+            document.querySelectorAll('.admin-type-section').forEach((section) => {
+                const types = section.dataset.types.split(' ');
+                const isVisible = types.includes(selectedType);
+                section.hidden = !isVisible;
+                section.classList.toggle('is-hidden', !isVisible);
+                section.querySelectorAll('input, select, textarea').forEach((field) => {
+                    field.disabled = !isVisible;
+                });
+            });
+            const meta = typeContentMeta[selectedType] || typeContentMeta.theory;
+            contentLabel.textContent = meta.label;
+            contentField.placeholder = meta.placeholder;
+
+            const isSingleChoice = selectedType === 'single_choice';
+            const checkedOptions = Array.from(document.querySelectorAll('[data-correct-checkbox]:checked'));
+            document.querySelectorAll('[data-correct-checkbox]').forEach((field, index) => {
+                field.type = isSingleChoice ? 'radio' : 'checkbox';
+                if (isSingleChoice && checkedOptions.length > 1) {
+                    field.checked = field === checkedOptions[0];
+                }
+            });
+        }
+        blockTypeSelect.addEventListener('change', syncTypeSections);
+        syncTypeSections();
+
+        function syncGeometryFields() {
+            if (!geometryShapeSelect) return;
+            const shape = geometryShapeSelect.value;
+            const meta = {
+                rectangle: ['a: длина', 'b: ширина', false],
+                triangle: ['a: основание', 'b: высота', false],
+                circle: ['r: радиус', 'не используется', false],
+                custom: ['масштаб/основной размер', 'не используется', true]
+            }[shape] || ['a', 'b', false];
+            geometryParamA.placeholder = meta[0];
+            geometryParamB.placeholder = meta[1];
+            geometryParamB.disabled = blockTypeSelect.value !== 'geometry_task' || shape === 'circle' || shape === 'custom';
+            geometryEditor.hidden = !meta[2] || blockTypeSelect.value !== 'geometry_task';
+        }
+
+        geometryShapeSelect?.addEventListener('change', syncGeometryFields);
+        blockTypeSelect.addEventListener('change', syncGeometryFields);
+        syncGeometryFields();
+
+        const correctIds = {% if block %}{{ block.data.correct_ids|default([])|tojson }}{% else %}[]{% endif %};
+        document.querySelectorAll('[data-correct-checkbox]').forEach((checkbox, index) => {
+            checkbox.value = String.fromCharCode(97 + index);
+            checkbox.checked = correctIds.includes(checkbox.value);
+        });
+
+        function insertAtCursor(field, value) {
+            const start = field.selectionStart ?? field.value.length;
+            const end = field.selectionEnd ?? field.value.length;
+            const before = field.value.slice(0, start);
+            const after = field.value.slice(end);
+            const prefix = before && !before.endsWith('\n') ? '\n\n' : '';
+            const suffix = after && !after.startsWith('\n') ? '\n\n' : '';
+            field.value = `${before}${prefix}${value}${suffix}${after}`;
+            const cursor = before.length + prefix.length + value.length;
+            field.focus();
+            field.setSelectionRange(cursor, cursor);
+            field.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        contentImageButton.addEventListener('click', () => contentImageInput.click());
+        contentImageInput.addEventListener('change', async () => {
+            const file = contentImageInput.files[0];
+            if (!file) return;
+
+            contentImageButton.disabled = true;
+            contentImageStatus.textContent = 'Загружаю картинку...';
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                formData.append('alt', file.name.replace(/\.[^.]+$/, ''));
+
+                const response = await fetch('{{ url_for("admin_upload_image") }}', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Не удалось загрузить картинку');
+                }
+                insertAtCursor(contentField, data.markdown);
+                contentImageStatus.textContent = 'Картинка вставлена в текст.';
+            } catch (error) {
+                contentImageStatus.textContent = error.message;
+            } finally {
+                contentImageInput.value = '';
+                contentImageButton.disabled = false;
+            }
+        });
+
+        const geometryEditorState = {
+            tool: 'rectangle',
+            shapes: [],
+            draft: null,
+            isDrawing: false,
+            startPoint: null,
+            snapPoint: null,
+        };
+
+        function loadGeometryShapes() {
+            if (!geometryShapesJson) return;
+            try {
+                const parsed = JSON.parse(geometryShapesJson.value || '[]');
+                geometryEditorState.shapes = Array.isArray(parsed) ? parsed : [];
+            } catch {
+                geometryEditorState.shapes = [];
+            }
+        }
+
+        function saveGeometryShapes() {
+            if (geometryShapesJson) {
+                geometryShapesJson.value = JSON.stringify(geometryEditorState.shapes);
+            }
+        }
+
+        function canvasEditorPoint(event) {
+            const rect = geometryEditorCanvas.getBoundingClientRect();
+            return {
+                x: (event.clientX - rect.left) * (geometryEditorCanvas.width / rect.width),
+                y: (event.clientY - rect.top) * (geometryEditorCanvas.height / rect.height)
+            };
+        }
+
+        function distance(a, b) {
+            return Math.hypot(a.x - b.x, a.y - b.y);
+        }
+
+        function shapePoints(shape) {
+            if (shape.type === 'rectangle') {
+                return [
+                    { x: shape.x, y: shape.y },
+                    { x: shape.x + shape.w, y: shape.y },
+                    { x: shape.x + shape.w, y: shape.y + shape.h },
+                    { x: shape.x, y: shape.y + shape.h },
+                    { x: shape.x + shape.w / 2, y: shape.y + shape.h / 2 }
+                ];
+            }
+            if (shape.type === 'triangle') {
+                return [
+                    { x: shape.x, y: shape.y - shape.h / 2 },
+                    { x: shape.x - shape.w / 2, y: shape.y + shape.h / 2 },
+                    { x: shape.x + shape.w / 2, y: shape.y + shape.h / 2 },
+                    { x: shape.x, y: shape.y }
+                ];
+            }
+            if (shape.type === 'circle') {
+                return [
+                    { x: shape.x, y: shape.y },
+                    { x: shape.x + shape.r, y: shape.y },
+                    { x: shape.x - shape.r, y: shape.y },
+                    { x: shape.x, y: shape.y + shape.r },
+                    { x: shape.x, y: shape.y - shape.r }
+                ];
+            }
+            if (shape.type === 'line') {
+                if ('x1' in shape) return [{ x: shape.x1, y: shape.y1 }, { x: shape.x2, y: shape.y2 }];
+                return [{ x: shape.x - shape.w / 2, y: shape.y }, { x: shape.x + shape.w / 2, y: shape.y }];
+            }
+            if (shape.type === 'label') return [{ x: shape.x, y: shape.y }];
+            return [];
+        }
+
+        function shapeSegments(shape) {
+            const points = shapePoints(shape);
+            if (shape.type === 'rectangle') return [[points[0], points[1]], [points[1], points[2]], [points[2], points[3]], [points[3], points[0]]];
+            if (shape.type === 'triangle') return [[points[0], points[1]], [points[1], points[2]], [points[2], points[0]]];
+            if (shape.type === 'line') return [[points[0], points[1]]];
+            return [];
+        }
+
+        function segmentIntersection(a, b, c, d) {
+            const den = (a.x - b.x) * (c.y - d.y) - (a.y - b.y) * (c.x - d.x);
+            if (Math.abs(den) < 0.0001) return null;
+            const px = ((a.x * b.y - a.y * b.x) * (c.x - d.x) - (a.x - b.x) * (c.x * d.y - c.y * d.x)) / den;
+            const py = ((a.x * b.y - a.y * b.x) * (c.y - d.y) - (a.y - b.y) * (c.x * d.y - c.y * d.x)) / den;
+            const within = (p, q, r) => p >= Math.min(q, r) - 0.5 && p <= Math.max(q, r) + 0.5;
+            if (within(px, a.x, b.x) && within(py, a.y, b.y) && within(px, c.x, d.x) && within(py, c.y, d.y)) {
+                return { x: px, y: py, intersection: true };
+            }
+            return null;
+        }
+
+        function collectSnapPoints(extraShape = null) {
+            const shapes = extraShape ? [...geometryEditorState.shapes, extraShape] : geometryEditorState.shapes;
+            const points = shapes.flatMap(shapePoints);
+            const segments = shapes.flatMap(shapeSegments);
+            for (let i = 0; i < segments.length; i += 1) {
+                for (let j = i + 1; j < segments.length; j += 1) {
+                    const point = segmentIntersection(segments[i][0], segments[i][1], segments[j][0], segments[j][1]);
+                    if (point) points.push(point);
+                }
+            }
+            return points;
+        }
+
+        function snapToPoint(point) {
+            const snapPoints = collectSnapPoints();
+            let best = null;
+            let bestDistance = 14;
+            snapPoints.forEach((candidate) => {
+                const currentDistance = distance(point, candidate);
+                if (currentDistance < bestDistance) {
+                    best = candidate;
+                    bestDistance = currentDistance;
+                }
+            });
+            geometryEditorState.snapPoint = best;
+            return best || point;
+        }
+
+        function shapeFromDrag(start, end) {
+            const tool = geometryEditorState.tool;
+            if (tool === 'label') return null;
+            if (tool === 'line') return { type: 'line', x1: start.x, y1: start.y, x2: end.x, y2: end.y };
+            if (tool === 'circle') return { type: 'circle', x: start.x, y: start.y, r: Math.max(4, distance(start, end)) };
+            const x = Math.min(start.x, end.x);
+            const y = Math.min(start.y, end.y);
+            const w = Math.abs(end.x - start.x);
+            const h = Math.abs(end.y - start.y);
+            if (tool === 'triangle') return { type: 'triangle', x: x + w / 2, y: y + h / 2, w: Math.max(4, w), h: Math.max(4, h) };
+            return { type: 'rectangle', x, y, w: Math.max(4, w), h: Math.max(4, h) };
+        }
+
+        function drawAdminGeometryEditor() {
+            if (!geometryEditorCanvas) return;
+            const ctx = geometryEditorCanvas.getContext('2d');
+            ctx.clearRect(0, 0, geometryEditorCanvas.width, geometryEditorCanvas.height);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, geometryEditorCanvas.width, geometryEditorCanvas.height);
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 1;
+            for (let x = 20; x < geometryEditorCanvas.width; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, geometryEditorCanvas.height);
+                ctx.stroke();
+            }
+            for (let y = 20; y < geometryEditorCanvas.height; y += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(geometryEditorCanvas.width, y);
+                ctx.stroke();
+            }
+            geometryEditorState.shapes.forEach((shape) => drawShapeOnCanvas(ctx, shape));
+            if (geometryEditorState.draft) {
+                ctx.save();
+                ctx.globalAlpha = 0.55;
+                ctx.setLineDash([8, 5]);
+                drawShapeOnCanvas(ctx, geometryEditorState.draft);
+                ctx.restore();
+            }
+            drawSnapDots(ctx, collectSnapPoints(geometryEditorState.draft));
+            if (geometryEditorState.snapPoint) drawSnapDots(ctx, [geometryEditorState.snapPoint], '#ef4444');
+        }
+
+        function drawSnapDots(ctx, points, color = '#0f172a') {
+            ctx.save();
+            ctx.fillStyle = color;
+            points.forEach((point) => {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, point.intersection ? 4 : 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.restore();
+        }
+
+        function drawShapeOnCanvas(ctx, shape) {
+            ctx.save();
+            ctx.strokeStyle = shape.stroke || '#2563eb';
+            ctx.fillStyle = shape.fill || 'rgba(37, 99, 235, 0.12)';
+            ctx.lineWidth = 3;
+            if (shape.type === 'rectangle') {
+                ctx.fillRect(shape.x, shape.y, shape.w, shape.h);
+                ctx.strokeRect(shape.x, shape.y, shape.w, shape.h);
+            } else if (shape.type === 'circle') {
+                ctx.beginPath();
+                ctx.arc(shape.x, shape.y, shape.r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            } else if (shape.type === 'triangle') {
+                ctx.beginPath();
+                ctx.moveTo(shape.x, shape.y - shape.h / 2);
+                ctx.lineTo(shape.x - shape.w / 2, shape.y + shape.h / 2);
+                ctx.lineTo(shape.x + shape.w / 2, shape.y + shape.h / 2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            } else if (shape.type === 'line') {
+                ctx.beginPath();
+                if ('x1' in shape) {
+                    ctx.moveTo(shape.x1, shape.y1);
+                    ctx.lineTo(shape.x2, shape.y2);
+                } else {
+                    ctx.moveTo(shape.x - shape.w / 2, shape.y);
+                    ctx.lineTo(shape.x + shape.w / 2, shape.y);
+                }
+                ctx.stroke();
+            } else if (shape.type === 'label') {
+                ctx.fillStyle = '#111827';
+                ctx.font = '16px Rubik, Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(shape.text || 'подпись', shape.x, shape.y);
+            }
+            ctx.restore();
+        }
+
+        function addLabelAt(point) {
+            const text = prompt('Текст подписи', 'a = 6');
+            if (!text) return;
+            geometryEditorState.shapes.push({ type: 'label', x: point.x, y: point.y, text });
+            saveGeometryShapes();
+            drawAdminGeometryEditor();
+        }
+
+        document.querySelectorAll('[data-shape-tool]').forEach((button) => {
+            button.addEventListener('click', () => {
+                geometryEditorState.tool = button.dataset.shapeTool;
+                geometryEditorCanvas?.classList.toggle('label-mode', geometryEditorState.tool === 'label');
+            });
+        });
+        document.getElementById('geometryUndoShape')?.addEventListener('click', () => {
+            geometryEditorState.shapes.pop();
+            saveGeometryShapes();
+            drawAdminGeometryEditor();
+        });
+        document.getElementById('geometryClearShapes')?.addEventListener('click', () => {
+            geometryEditorState.shapes = [];
+            saveGeometryShapes();
+            drawAdminGeometryEditor();
+        });
+        geometryEditorCanvas?.addEventListener('pointerdown', (event) => {
+            const point = snapToPoint(canvasEditorPoint(event));
+            if (geometryEditorState.tool === 'label') {
+                addLabelAt(point);
+                return;
+            }
+            geometryEditorState.isDrawing = true;
+            geometryEditorState.startPoint = point;
+            geometryEditorState.draft = null;
+            geometryEditorCanvas.setPointerCapture(event.pointerId);
+        });
+        geometryEditorCanvas?.addEventListener('pointermove', (event) => {
+            if (!geometryEditorState.isDrawing || !geometryEditorState.startPoint) return;
+            const point = snapToPoint(canvasEditorPoint(event));
+            geometryEditorState.draft = shapeFromDrag(geometryEditorState.startPoint, point);
+            drawAdminGeometryEditor();
+        });
+        function finishGeometryDraw(event) {
+            if (!geometryEditorState.isDrawing) return;
+            const point = snapToPoint(canvasEditorPoint(event));
+            const shape = shapeFromDrag(geometryEditorState.startPoint, point);
+            geometryEditorState.isDrawing = false;
+            geometryEditorState.startPoint = null;
+            geometryEditorState.draft = null;
+            geometryEditorState.snapPoint = null;
+            if (shape && distance(shapePoints(shape)[0] || point, point) > 2) {
+                geometryEditorState.shapes.push(shape);
+                saveGeometryShapes();
+            }
+            drawAdminGeometryEditor();
+        }
+        geometryEditorCanvas?.addEventListener('pointerup', finishGeometryDraw);
+        geometryEditorCanvas?.addEventListener('pointercancel', () => {
+            geometryEditorState.isDrawing = false;
+            geometryEditorState.startPoint = null;
+            geometryEditorState.draft = null;
+            geometryEditorState.snapPoint = null;
+            drawAdminGeometryEditor();
+        });
+        loadGeometryShapes();
+        drawAdminGeometryEditor();
+    </script>
+</body>
+</html>
+

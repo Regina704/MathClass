@@ -1,0 +1,44 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Админка</title>
+    {% include "_theme_boot.html" %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="code-bg-page">
+    {% include "_code_background.html" %}
+    <main class="learning-shell">
+        {% include "_top_nav.html" %}
+        <section class="student-layout">
+            <aside class="student-sidebar">
+                <p class="eyebrow">Модули</p>
+                <nav class="module-side-list">
+                    {% for module in modules %}
+                        <div class="module-side-item">
+                            <a href="{{ url_for('admin_module_page', module_id=module.id) }}">
+                                <span>{{ "%02d"|format(loop.index) }}</span>
+                                <strong>{{ module.title }}</strong>
+                            </a>
+                            <form method="post" action="{{ url_for('admin_delete_module', module_id=module.id) }}" onsubmit="return confirm('Удалить модуль «{{ module.title }}»? Вместе с ним удалятся все уроки, уровни и задания.');">
+                                <button class="icon-danger-btn" type="submit" title="Удалить модуль" aria-label="Удалить модуль">×</button>
+                            </form>
+                        </div>
+                    {% endfor %}
+                    <a class="admin-create-link" href="{{ url_for('admin_new_module') }}">
+                        <span>＋</span>
+                        <strong>Новый модуль</strong>
+                    </a>
+                </nav>
+                {% include "admin/_quick_actions.html" %}
+            </aside>
+            <section class="student-home-panel">
+                <p class="eyebrow">Панель администратора</p>
+                <h1>Выбери модуль</h1>
+                <p class="muted-text">Слева список модулей. Открой модуль, чтобы добавлять уроки, уровни и задания.</p>
+            </section>
+        </section>
+    </main>
+</body>
+</html>
+

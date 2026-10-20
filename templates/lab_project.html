@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project.title }}</title>
+    {% include "_theme_boot.html" %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="code-bg-page">
+    {% include "_code_background.html" %}
+    <main class="learning-shell">
+        {% include "_top_nav.html" %}
+        <section class="content-panel">
+            <a class="back-link" href="{{ url_for('laboratory_page') }}">← Практикум</a>
+            <p class="eyebrow">Самостоятельная задача</p>
+            <h1>{{ project.title }}</h1>
+            <h2>Цель</h2>
+            <p>{{ project.goal }}</p>
+            {% if project.description %}
+                <h2>Заметки</h2>
+                <div class="markdown-content" data-markdown>{{ project.description }}</div>
+            {% endif %}
+        </section>
+    </main>
+    <script src="{{ url_for('static', filename='markdown_render.js') }}"></script>
+</body>
+</html>

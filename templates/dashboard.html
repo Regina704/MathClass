@@ -1,0 +1,70 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Математично</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    {% include "_theme_boot.html" %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="home-page">
+    {% include "_code_background.html" %}
+    <main class="learning-shell home-shell">
+        {% include "_top_nav.html" %}
+
+        <section class="home-hero">
+            <div class="home-hero-copy">
+                <p class="eyebrow">Математично</p>
+                <h1><span>y</span> = f(x), но понятно</h1>
+                <p>
+                    Проходи курс по шагам, проверяй решения и исследуй графики, коэффициенты и фигуры в практикуме.
+                </p>
+            </div>
+
+            <div class="mode-card-grid">
+                <a class="mode-card course-card" href="{{ url_for('course_page') }}" style="--active-color: #38bdf8">
+                    <pixel-canvas data-gap="6" data-speed="70" data-colors="#0ea5e9,#38bdf8,#a5f3fc" data-no-focus></pixel-canvas>
+                    <div class="mode-card-content">
+                        <span class="mode-card-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M4 5.75A2.75 2.75 0 0 1 6.75 3H20v15.25A2.75 2.75 0 0 1 17.25 21H6.75A2.75 2.75 0 0 1 4 18.25V5.75Zm3 .75v10h9.75V6.5H7Zm0 12a.75.75 0 0 0 .75.75h9.5a1 1 0 0 0 1-1H7.75A.75.75 0 0 0 7 18.5Z"/></svg>
+                        </span>
+                        <span class="mode-card-kicker">01</span>
+                        <h2>Курс</h2>
+                        <p>Модули, уроки, уровни и задания с проверкой.</p>
+                    </div>
+                </a>
+
+                <a class="mode-card lab-card" href="{{ url_for('laboratory_page') }}" style="--active-color: #a78bfa">
+                    <pixel-canvas data-gap="6" data-speed="80" data-colors="#7c3aed,#a78bfa,#ddd6fe" data-no-focus></pixel-canvas>
+                    <div class="mode-card-content">
+                        <span class="mode-card-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M9 3.75A.75.75 0 0 1 9.75 3h4.5a.75.75 0 0 1 0 1.5H13.5v3.1l5.4 8.74A3 3 0 0 1 16.35 21h-8.7a3 3 0 0 1-2.55-4.58l5.4-8.82V4.5h-.75A.75.75 0 0 1 9 3.75Zm2.84 4.86-2.8 4.56h5.91l-2.79-4.52a.75.75 0 0 1-.11-.4V4.5h-.05v3.72a.75.75 0 0 1-.16.39ZM8.12 14.67l-1.74 2.84A1.5 1.5 0 0 0 7.65 19.5h8.7a1.5 1.5 0 0 0 1.28-2.29l-1.57-2.54H8.12Z"/></svg>
+                        </span>
+                        <span class="mode-card-kicker">02</span>
+                        <h2>Практикум</h2>
+                        <p>Графики, коэффициенты и исследование стандартных функций.</p>
+                    </div>
+                </a>
+
+                {% if current_user and current_user.role == "admin" %}
+                    <a class="mode-card admin-card" href="{{ url_for('admin_dashboard') }}" style="--active-color: #34d399">
+                        <pixel-canvas data-gap="6" data-speed="75" data-colors="#059669,#34d399,#bbf7d0" data-no-focus></pixel-canvas>
+                        <div class="mode-card-content">
+                            <span class="mode-card-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><path d="M12 2.75a.75.75 0 0 1 .68.43l1.2 2.55 2.78.42a.75.75 0 0 1 .42 1.28l-2.01 1.99.47 2.8a.75.75 0 0 1-1.09.79L12 11.69l-2.45 1.32a.75.75 0 0 1-1.09-.79l.47-2.8-2.01-1.99a.75.75 0 0 1 .42-1.28l2.78-.42 1.2-2.55a.75.75 0 0 1 .68-.43ZM5.75 15h12.5A2.75 2.75 0 0 1 21 17.75v1.5A1.75 1.75 0 0 1 19.25 21H4.75A1.75 1.75 0 0 1 3 19.25v-1.5A2.75 2.75 0 0 1 5.75 15Z"/></svg>
+                            </span>
+                            <span class="mode-card-kicker">03</span>
+                            <h2>Админка</h2>
+                            <p>Создание модулей, уроков, уровней и заданий.</p>
+                        </div>
+                    </a>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+<script src="{{ url_for('static', filename='pixel_canvas.js') }}"></script>
+</body>
+</html>

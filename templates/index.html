@@ -1,0 +1,114 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Математично</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% include "_theme_boot.html" %}
+    <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/editor/editor.main.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="code-bg-page">
+    {% include "_code_background.html" %}
+    {% if lab_project %}
+        <div class="level-runtime-shell">
+            <div class="level-topbar level-runtime-nav lab-runtime-nav">
+                <a class="back-link" href="{{ url_for('laboratory_page') }}">←</a>
+                <div class="lab-runtime-title" title="{{ lab_project.title }}">{{ lab_project.title }}</div>
+            </div>
+        </div>
+    {% elif level and level_blocks %}
+        <div class="level-runtime-shell">
+            <div class="level-topbar level-runtime-nav">
+                <a class="back-link" href="{{ url_for('admin_module_page' if current_user and current_user.role == 'admin' else 'module_page', module_id=level.module.id) }}">←</a>
+                <nav class="level-stepper">
+                    {% for item in level_blocks %}
+                        <a class="level-step {% if active_block and item.id == active_block.id %}active{% endif %} {% if item.progress and item.progress.status == 'completed' %}done{% endif %}"
+                           href="{{ url_for('level_page', level_id=level.id, block=item.id) }}"
+                           title="{{ item.title }}">
+                            {{ loop.index }}
+                        </a>
+                    {% endfor %}
+                    {% if current_user and current_user.role == "admin" %}
+                        <a class="level-step add" href="{{ url_for('admin_new_block', level_id=level.id) }}" title="Добавить задание">＋</a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    {% endif %}
+    <div class="workspace">
+        <div class="editor-panel">
+            <div class="editor-header">
+                <span>{{ "🧪 " ~ lab_project.title if lab_project else "📄 main.py" }}</span>
+                <div class="controls">
+                    {% if lab_project %}
+                        <button id="labSaveBtn" class="ctrl-btn icon-btn" title="Сохранить проект" aria-label="Сохранить проект">💾</button>
+                    {% endif %}
+                    <button class="theme-switch" id="themeToggle" title="Сменить тему">☾</button>
+                </div>
+            </div>
+            <div id="editor" class="editor-container"></div>
+        </div>
+
+        <div class="resize-handle vertical-resize" id="mainResizeHandle"></div>
+
+        <div class="right-panel" id="rightPanel">
+            <div class="console-section">
+                <div class="console-header">
+                    <span>💻 ВЫВОД</span>
+                    <div class="controls">
+                        <button id="runBtn" class="ctrl-btn icon-btn" title="Запустить" aria-label="Запустить">▶</button>
+                        <button id="stopBtn" class="ctrl-btn icon-btn stop-btn" title="Остановить" aria-label="Остановить">■</button>
+                        <button id="checkBtn" class="ctrl-btn icon-btn check-btn" title="Проверить задание" aria-label="Проверить задание">✓</button>
+                    </div>
+                </div>
+                <div class="output-area" id="outputContainer">
+                    <div id="outputText"></div>
+                    <canvas id="canvas" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="task-slider open" id="taskSlider">
+            <button class="slider-rail" id="sliderTab" title="Показать или скрыть задачу" aria-label="Показать или скрыть задачу">
+                <span class="slider-arrow">›</span>
+            </button>
+            <div class="task-content">
+                <h3>{{ block_title or "Условие" }}</h3>
+                {% if current_user and current_user.role == "admin" and block_id %}
+                    <div class="admin-actions task-edit-link">
+                        <a class="primary-link" href="{{ url_for('admin_edit_block', block_id=block_id) }}">Редактировать</a>
+                        <form method="post" action="{{ url_for('admin_delete_block', block_id=block_id) }}" onsubmit="return confirm('Удалить это задание? Это действие нельзя отменить.');">
+                            <button class="danger-link" type="submit">Удалить</button>
+                        </form>
+                    </div>
+                {% endif %}
+                <div class="task-text markdown-content" data-markdown>{{ task_text }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="success-overlay" id="successOverlay">✅ Задача решена верно!</div>
+
+    <!-- Monaco Editor -->
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
+    <script>
+        window.LESSON_CONFIG = {
+            blockId: {{ block_id or "null" }},
+            starterCode: {{ starter_code|default("")|tojson }},
+            taskText: {{ task_text|tojson }}
+        };
+        window.LAB_PROJECT = {% if lab_project %}{
+            id: {{ lab_project.id }},
+            title: {{ lab_project.title|tojson }},
+            goal: {{ lab_project.goal|tojson }},
+            description: {{ lab_project.description|tojson }}
+        }{% else %}null{% endif %};
+    </script>
+    <!-- Наш основной скрипт -->
+    <script src="{{ url_for('static', filename='markdown_render.js') }}"></script>
+    <script src="/static/engine.js"></script>
+</body>
+</html>

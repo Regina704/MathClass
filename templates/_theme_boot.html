@@ -1,0 +1,9 @@
+<script>
+    (function () {
+        try {
+            if (localStorage.getItem("matematichno-theme") === "light") {
+                document.documentElement.classList.add("light");
+            }
+        } catch (error) {}
+    })();
+</script>

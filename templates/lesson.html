@@ -1,0 +1,37 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ lesson.title }}</title>
+    {% include "_theme_boot.html" %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="code-bg-page">
+    {% include "_code_background.html" %}
+    <main class="learning-shell">
+        {% include "_top_nav.html" %}
+        <header class="learning-header compact">
+            <div>
+                <p class="eyebrow">Урок</p>
+                <h1>{{ lesson.title }}</h1>
+                <p>{{ lesson.description }}</p>
+                <div class="progress-track lesson-progress">
+                    <div class="progress-fill" style="width: {{ lesson.progress.percent }}%"></div>
+                </div>
+            </div>
+        </header>
+        <section class="content-panel admin-list-panel">
+            {% for level in lesson.levels %}
+                <a class="admin-list-row" href="{{ url_for('level_page', level_id=level.id) }}">
+                    <span class="module-index">{{ loop.index }}</span>
+                    <div>
+                        <h2>{{ level.title }}</h2>
+                        <p>{{ level.description }}</p>
+                    </div>
+                    <strong>{{ level.progress.percent }}%</strong>
+                </a>
+            {% endfor %}
+        </section>
+    </main>
+</body>
+</html>

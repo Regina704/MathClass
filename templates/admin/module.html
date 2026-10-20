@@ -1,0 +1,85 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ module.title }}</title>
+    {% include "_theme_boot.html" %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="code-bg-page">
+    {% include "_code_background.html" %}
+    <main class="learning-shell">
+        {% include "_top_nav.html" %}
+        <section class="student-layout">
+            <aside class="student-sidebar">
+                <p class="eyebrow">Модули</p>
+                <nav class="module-side-list">
+                    {% for item in modules %}
+                        <div class="module-side-item {% if item.id == module.id %}active{% endif %}">
+                            <a class="{% if item.id == module.id %}active{% endif %}" href="{{ url_for('admin_module_page', module_id=item.id) }}">
+                                <span>{{ "%02d"|format(loop.index) }}</span>
+                                <strong>{{ item.title }}</strong>
+                            </a>
+                            <form method="post" action="{{ url_for('admin_delete_module', module_id=item.id) }}" onsubmit="return confirm('Удалить модуль «{{ item.title }}»? Вместе с ним удалятся все уроки, уровни и задания.');">
+                                <button class="icon-danger-btn" type="submit" title="Удалить модуль" aria-label="Удалить модуль">×</button>
+                            </form>
+                        </div>
+                    {% endfor %}
+                    <a class="admin-create-link" href="{{ url_for('admin_new_module') }}">
+                        <span>＋</span>
+                        <strong>Новый модуль</strong>
+                    </a>
+                </nav>
+                {% include "admin/_quick_actions.html" %}
+            </aside>
+
+            <section class="module-lessons-panel">
+                <header class="module-heading">
+                    <p class="eyebrow">Модуль</p>
+                    <div class="admin-title-row">
+                        <h1>{{ module.title }}</h1>
+                        <form method="post" action="{{ url_for('admin_delete_module', module_id=module.id) }}" onsubmit="return confirm('Удалить модуль «{{ module.title }}»? Вместе с ним удалятся все уроки, уровни и задания.');">
+                            <button class="danger-link" type="submit">Удалить модуль</button>
+                        </form>
+                    </div>
+                    <p>{{ module.description }}</p>
+                </header>
+
+                {% for lesson in module.lessons %}
+                    <section class="lesson-section">
+                        <div class="lesson-section-head">
+                            <div>
+                                <h2>{{ lesson.title }}</h2>
+                                <p>{{ lesson.description }}</p>
+                            </div>
+                            <form method="post" action="{{ url_for('admin_delete_lesson', lesson_id=lesson.id) }}" onsubmit="return confirm('Удалить урок «{{ lesson.title }}»? Вместе с ним удалятся все уровни и задания.');">
+                                <button class="danger-link compact" type="submit">Удалить</button>
+                            </form>
+                        </div>
+                        <div class="level-bubble-row">
+                            {% for level in lesson.levels %}
+                                <div class="level-admin-item">
+                                    <a class="level-bubble {% if level.progress.status == 'completed' %}done{% endif %}" href="{{ url_for('level_page', level_id=level.id) }}">
+                                        <span>{{ loop.index }}</span>
+                                        <strong>{{ level.title }}</strong>
+                                    </a>
+                                    <form method="post" action="{{ url_for('admin_delete_level', level_id=level.id) }}" onsubmit="return confirm('Удалить уровень «{{ level.title }}»? Вместе с ним удалятся все задания уровня.');">
+                                        <button class="icon-danger-btn level-delete-btn" type="submit" title="Удалить уровень" aria-label="Удалить уровень">×</button>
+                                    </form>
+                                </div>
+                            {% endfor %}
+                            <a class="level-bubble add" href="{{ url_for('admin_new_level', lesson_id=lesson.id) }}">
+                                <span>＋</span>
+                                <strong>Уровень</strong>
+                            </a>
+                        </div>
+                    </section>
+                {% endfor %}
+
+                <a class="admin-plus-row" href="{{ url_for('admin_new_lesson') }}">＋ Добавить урок</a>
+            </section>
+        </section>
+    </main>
+</body>
+</html>
+

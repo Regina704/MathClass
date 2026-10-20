@@ -1,0 +1,20 @@
+﻿<nav class="top-nav">
+    <a class="brand-link" href="{{ url_for('student_dashboard') }}" aria-label="Математично">
+        <span class="brand-bracket">∑</span>
+        <span>Математ</span><strong>ично</strong>
+    </a>
+    <div class="top-nav-links">
+        <a href="{{ url_for('student_dashboard') }}">Главная</a>
+        <a href="{{ url_for('course_page') }}">Курс</a>
+        <a href="{{ url_for('laboratory_page') }}">Практикум</a>
+        {% if current_user and current_user.role == "admin" %}
+            <a href="{{ url_for('admin_dashboard') }}">Админка</a>
+        {% endif %}
+        {% if current_user %}
+            <span>{{ current_user.name }}</span>
+            <button class="theme-switch site-theme-toggle" type="button" data-site-theme-toggle title="Сменить тему">☾</button>
+            <a href="{{ url_for('logout') }}">Выйти</a>
+        {% endif %}
+    </div>
+</nav>
+<script src="{{ url_for('static', filename='site_ui.js') }}" defer></script>

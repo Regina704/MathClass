@@ -1,0 +1,122 @@
+﻿{% if block.type == "presentation" %}
+    <div class="markdown-content" data-markdown>{{ block.content }}</div>
+    <div class="presentation-frame">
+        <div class="presentation-loader" data-presentation-loader>
+            <span></span>
+            <strong>Загрузка презентации</strong>
+        </div>
+        <iframe src="{{ block.data.embed_url|slides_embed }}" loading="lazy" allowfullscreen data-presentation-frame></iframe>
+    </div>
+{% elif block.type in ["single_choice", "multiple_choice"] %}
+    <div class="markdown-content" data-markdown>{{ block.content }}</div>
+    <div class="choice-list" id="choiceList" data-mode="{{ block.type }}">
+        {% for option in block.data.options %}
+            {% if block.type == "multiple_choice" %}
+                <label class="choice-button choice-checkbox">
+                    <input type="checkbox" value="{{ option.id }}">
+                    <span>{{ option.text }}</span>
+                </label>
+            {% else %}
+                <button class="choice-button" type="button" data-answer="{{ option.id }}">{{ option.text }}</button>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% if block.type == "multiple_choice" %}
+        <button class="primary-link choice-submit" id="choiceSubmit" type="button">Проверить</button>
+    {% endif %}
+    <p class="muted-text" id="choiceFeedback">Попыток: 0/{{ block.data.max_attempts or 3 }}</p>
+{% elif block.type == "matching" %}
+    <div class="markdown-content" data-markdown>{{ block.content }}</div>
+    <div class="matching-board" id="matchingBoard">
+        <svg class="matching-lines" id="matchingLines" aria-hidden="true"></svg>
+        <div class="matching-column matching-left">
+            {% for pair in block.data.pairs %}
+                <button class="matching-node matching-node-left" type="button" data-left="{{ pair.left }}">
+                    <span class="matching-port"></span>
+                    <strong>{{ pair.left }}</strong>
+                </button>
+            {% endfor %}
+        </div>
+        <div class="matching-column matching-right">
+            {% for pair in block.data.pairs %}
+                <button class="matching-node matching-node-right" type="button" data-right="{{ pair.right }}">
+                    <strong>{{ pair.right }}</strong>
+                    <span class="matching-port"></span>
+                </button>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="matching-tools">
+        <button class="secondary-link" id="matchingClear" type="button">Сбросить связи</button>
+    </div>
+    <button class="primary-link choice-submit" id="matchingSubmit" type="button">Проверить</button>
+    <p class="muted-text" id="matchingFeedback">Попыток: 0/{{ block.data.max_attempts or 3 }}</p>
+{% elif block.type == "math_answer" %}
+    <div class="markdown-content" data-markdown>{{ block.content }}</div>
+    <form class="math-answer-form" id="mathAnswerForm">
+        <label for="mathAnswerInput">Ответ</label>
+        <div class="math-answer-row">
+            <input id="mathAnswerInput" autocomplete="off" placeholder="{{ block.data.placeholder or 'Например: 6, 3/4, x = 2' }}">
+            <button class="primary-link" type="submit">Проверить</button>
+        </div>
+    </form>
+    {% if block.data.hint %}
+        <p class="muted-text">{{ block.data.hint }}</p>
+    {% endif %}
+    <p class="muted-text" id="mathAnswerFeedback">Попыток: 0/{{ block.data.max_attempts or 3 }}</p>
+{% elif block.type == "graph_plotter" %}
+    <div class="markdown-content" data-markdown>{{ block.content }}</div>
+    <section class="graph-tool" id="graphTool">
+        <div class="graph-controls">
+            <label for="graphFormulaInput">Формула</label>
+            <div class="math-answer-row">
+                <input id="graphFormulaInput" value="{{ block.data.default_formula or 'x^2' }}" autocomplete="off" placeholder="Например: x^2 - 4 или sin(x)">
+                <button class="primary-link" id="graphPlotButton" type="button">Построить</button>
+            </div>
+            <div class="graph-toolbar" aria-label="Управление графиком">
+                <button class="secondary-link" id="graphZoomIn" type="button">+</button>
+                <button class="secondary-link" id="graphZoomOut" type="button">-</button>
+                <button class="secondary-link" id="graphReset" type="button">Сбросить вид</button>
+                {% if block.data.correct_formula %}
+                    <button class="secondary-link" id="graphCheckFormula" type="button">Проверить формулу</button>
+                {% endif %}
+            </div>
+            <p class="muted-text">Поддерживаются x, +, -, *, /, ^, скобки, sin, cos, tan, sqrt, abs, log.</p>
+        </div>
+        <canvas id="graphCanvas" width="900" height="520" aria-label="График функции"></canvas>
+        <p class="muted-text" id="graphFeedback"></p>
+    </section>
+{% elif block.type == "step_solution" %}
+    <div class="markdown-content" data-markdown>{{ block.content }}</div>
+    <form class="step-solution" id="stepSolutionForm">
+        {% for step in block.data.steps %}
+            <label class="step-solution-row">
+                <span class="step-solution-index">{{ loop.index }}</span>
+                <span class="step-solution-copy">
+                    <strong>{{ step.label or ("Шаг " ~ loop.index) }}</strong>
+                    {% if step.description %}
+                        <small>{{ step.description }}</small>
+                    {% endif %}
+                </span>
+                <input autocomplete="off" data-step-index="{{ loop.index0 }}" placeholder="{{ step.placeholder or 'Запиши преобразование или ответ' }}">
+            </label>
+        {% endfor %}
+        <button class="primary-link" type="submit">Проверить решение</button>
+    </form>
+    <p class="muted-text" id="stepSolutionFeedback">Попыток: 0/{{ block.data.max_attempts or 3 }}</p>
+{% elif block.type == "geometry_task" %}
+    <div class="markdown-content" data-markdown>{{ block.content }}</div>
+    <section class="geometry-task" id="geometryTask">
+        <canvas id="geometryCanvas" width="760" height="420" aria-label="Геометрическая фигура"></canvas>
+        <form class="math-answer-form" id="geometryAnswerForm">
+            <label for="geometryAnswerInput">{{ block.data.answer_label or 'Ответ' }}</label>
+            <div class="math-answer-row">
+                <input id="geometryAnswerInput" autocomplete="off" placeholder="{{ block.data.placeholder or 'Введите число' }}">
+                <button class="primary-link" type="submit">Проверить</button>
+            </div>
+        </form>
+        <p class="muted-text" id="geometryFeedback">Попыток: 0/{{ block.data.max_attempts or 3 }}</p>
+    </section>
+{% else %}
+    <div class="markdown-content" data-markdown>{{ block.content }}</div>
+{% endif %}

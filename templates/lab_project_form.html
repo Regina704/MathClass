@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Новая задача</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    {% include "_theme_boot.html" %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="code-bg-page">
+    {% include "_code_background.html" %}
+    <main class="learning-shell">
+        {% include "_top_nav.html" %}
+        <section class="content-panel admin-form lab-form-panel">
+            <a class="back-link" href="{{ url_for('laboratory_page') }}">← Практикум</a>
+            <div class="admin-form-head">
+                <div>
+                    <p class="eyebrow">Практикум</p>
+                    <h1>Новая задача</h1>
+                </div>
+            </div>
+            {% if error %}
+                <p class="form-error">{{ error }}</p>
+            {% endif %}
+            <form method="post" class="stacked-form">
+                <label>
+                    Название задачи
+                    <input name="title" placeholder="Например: Уравнения с параметром" required>
+                </label>
+                <label>
+                    Цель
+                    <textarea name="goal" rows="3" placeholder="Что нужно понять, решить или исследовать?" required></textarea>
+                </label>
+                <label>
+                    Описание
+                    <textarea name="description" rows="6" placeholder="Условие, заметки, промежуточные шаги или вопросы к задаче."></textarea>
+                </label>
+                <button class="primary-link" type="submit">Создать и открыть задачу</button>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

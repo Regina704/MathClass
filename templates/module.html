@@ -1,0 +1,56 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ module.title }}</title>
+    {% include "_theme_boot.html" %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="code-bg-page">
+    {% include "_code_background.html" %}
+    <main class="learning-shell">
+        {% include "_top_nav.html" %}
+        <section class="student-layout">
+            <aside class="student-sidebar">
+                <p class="eyebrow">Модули</p>
+                <nav class="module-side-list">
+                    {% for item in modules %}
+                        <a class="{% if item.id == module.id %}active{% endif %}" href="{{ url_for('module_page', module_id=item.id) }}">
+                            <span>{{ "%02d"|format(loop.index) }}</span>
+                            <strong>{{ item.title }}</strong>
+                        </a>
+                    {% endfor %}
+                </nav>
+            </aside>
+
+            <section class="module-lessons-panel">
+                <header class="module-heading">
+                    <p class="eyebrow">Модуль</p>
+                    <h1>{{ module.title }}</h1>
+                    <p>{{ module.description }}</p>
+                </header>
+
+                {% for lesson in module.lessons %}
+                    <section class="lesson-section">
+                        <div class="lesson-section-head">
+                            <div>
+                                <h2>{{ lesson.title }}</h2>
+                                <p>{{ lesson.description }}</p>
+                            </div>
+                            <strong>{{ lesson.progress.percent }}%</strong>
+                        </div>
+                        <div class="level-bubble-row">
+                            {% for level in lesson.levels %}
+                                <a class="level-bubble {% if level.progress.status == 'completed' %}done{% endif %}" href="{{ url_for('level_page', level_id=level.id) }}">
+                                    <span>{{ loop.index }}</span>
+                                    <strong>{{ level.title }}</strong>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </section>
+                {% endfor %}
+            </section>
+        </section>
+    </main>
+</body>
+</html>

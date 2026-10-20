@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Практикум</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    {% include "_theme_boot.html" %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="code-bg-page">
+    {% include "_code_background.html" %}
+    <main class="learning-shell home-shell">
+        {% include "_top_nav.html" %}
+
+        <section class="math-lab-page">
+            <header class="math-lab-head">
+                <div>
+                    <p class="eyebrow">Практикум</p>
+                    <h1>Песочница функций</h1>
+                    <p>Строй свои графики и смотри, как коэффициенты меняют стандартные функции.</p>
+                </div>
+            </header>
+
+            <div class="lab-tabs" role="tablist" aria-label="Режимы практикума">
+                <button class="lab-tab active" type="button" data-lab-tab="free-graph">Свободный график</button>
+                <button class="lab-tab" type="button" data-lab-tab="parametric">Коэффициенты</button>
+            </div>
+
+            <section class="lab-workspace active" data-lab-panel="free-graph">
+                <aside class="lab-side-panel">
+                    <div class="lab-toolbar lab-toolbar-top">
+                        <label>
+                            Формула
+                            <input id="labFreeFormula" value="sin(x)" autocomplete="off" placeholder="Например: x^2 - 4 или 1/x">
+                        </label>
+                        <button class="primary-link" id="labFreePlot" type="button">Построить</button>
+                        <button class="secondary-link" id="labFreeReset" type="button">Сбросить вид</button>
+                    </div>
+                    <p class="muted-text" id="labFreeFeedback"></p>
+                </aside>
+                <div class="lab-graph-panel">
+                    <canvas class="lab-canvas graph-canvas" id="labFreeGraph" width="980" height="540"></canvas>
+                </div>
+            </section>
+
+            <section class="lab-workspace" data-lab-panel="parametric">
+                <aside class="lab-side-panel">
+                    <div class="parametric-controls parametric-controls-top">
+                        <label>
+                            Тип функции
+                            <select id="paramFunctionType">
+                                <option value="linear">Линейная: y = ax + b</option>
+                                <option value="quadratic">Квадратичная: y = ax² + bx + c</option>
+                                <option value="cubic">Кубическая: y = ax³ + bx² + cx + d</option>
+                                <option value="power">Степенная: y = a(x - h)^n + k</option>
+                                <option value="sine">Синусоида: y = a sin(bx + c) + d</option>
+                                <option value="cosine">Косинусоида: y = a cos(bx + c) + d</option>
+                                <option value="tangent">Тангенс: y = a tan(bx + c) + d</option>
+                                <option value="hyperbola">Гипербола: y = a / (x - h) + k</option>
+                                <option value="root">Корень: y = a√(x - h) + k</option>
+                                <option value="absolute">Модуль: y = a|x - h| + k</option>
+                                <option value="exponential">Показательная: y = a·b^(x - h) + k</option>
+                                <option value="logarithm">Логарифм: y = a log_b(x - h) + k</option>
+                            </select>
+                        </label>
+                        <p class="muted-text" id="paramFormula"></p>
+                        <div class="slider-stack slider-stack-horizontal" id="paramSliders"></div>
+                    </div>
+                </aside>
+                <div class="lab-graph-panel">
+                    <canvas class="lab-canvas graph-canvas" id="paramGraph" width="980" height="540"></canvas>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='math_lab.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ block.title }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% include "_theme_boot.html" %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="code-bg-page">
+    {% include "_code_background.html" %}
+    <main class="learning-shell">
+        {% include "_top_nav.html" %}
+        <header class="learning-header">
+            <div>
+                <a class="back-link" href="{{ url_for('lesson_page', lesson_id=block.lesson_id) }}">← К уроку</a>
+                <p class="eyebrow">{{ block.type }}</p>
+                <h1>{{ block.title }}</h1>
+            </div>
+        </header>
+
+        <section class="content-panel">
+            {% include "_lesson_block_content.html" %}
+        </section>
+    </main>
+    {% if block.type in ["single_choice", "multiple_choice"] %}
+        <script>
+            window.CHOICE_CONFIG = {
+                blockId: {{ block.id }},
+                mode: {{ block.type|tojson }},
+                salt: {{ block.data.salt|tojson }},
+                answerHash: {{ block.data.answer_hash|tojson }},
+                maxAttempts: {{ block.data.max_attempts or 3 }}
+            };
+        </script>
+        <script src="{{ url_for('static', filename='choice.js') }}"></script>
+    {% endif %}
+    {% if block.type == "matching" %}
+        <script>
+            window.MATCHING_CONFIG = {
+                blockId: {{ block.id }},
+                salt: {{ block.data.salt|tojson }},
+                answerHash: {{ block.data.answer_hash|tojson }},
+                maxAttempts: {{ block.data.max_attempts or 3 }}
+            };
+        </script>
+        <script src="{{ url_for('static', filename='matching.js') }}"></script>
+    {% endif %}
+    {% if block.type == "math_answer" %}
+        <script>
+            window.MATH_ANSWER_CONFIG = {
+                blockId: {{ block.id }},
+                salt: {{ block.data.salt|tojson }},
+                answerHash: {{ block.data.answer_hash|tojson }},
+                maxAttempts: {{ block.data.max_attempts or 3 }}
+            };
+        </script>
+        <script src="{{ url_for('static', filename='math_answer.js') }}"></script>
+    {% endif %}
+    {% if block.type == "graph_plotter" %}
+        <script>
+            window.GRAPH_PLOTTER_CONFIG = {
+                blockId: {{ block.id }},
+                hasFormulaCheck: {{ "true" if block.data.correct_formula else "false" }}
+            };
+        </script>
+        <script src="{{ url_for('static', filename='graph_plotter.js') }}"></script>
+    {% endif %}
+    {% if block.type == "step_solution" %}
+        <script>
+            window.STEP_SOLUTION_CONFIG = {
+                blockId: {{ block.id }},
+                maxAttempts: {{ block.data.max_attempts or 3 }},
+                steps: [
+                    {% for step in block.data.steps|default([]) %}
+                        {
+                            label: {{ step.label|tojson }},
+                            description: {{ step.description|tojson }},
+                            placeholder: {{ step.placeholder|tojson }},
+                            answerHash: {{ step.answer_hash|tojson }}
+                        }{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                salt: {{ block.data.salt|tojson }}
+            };
+        </script>
+        <script src="{{ url_for('static', filename='step_solution.js') }}"></script>
+    {% endif %}
+    {% if block.type == "geometry_task" %}
+        <script>
+            window.GEOMETRY_TASK_CONFIG = {
+                blockId: {{ block.id }},
+                shape: {{ block.data.shape|tojson }},
+                params: {{ block.data.params|default({})|tojson }},
+                shapes: {{ block.data.shapes|default([])|tojson }},
+                salt: {{ block.data.salt|tojson }},
+                answerHash: {{ block.data.answer_hash|tojson }},
+                maxAttempts: {{ block.data.max_attempts or 3 }}
+            };
+        </script>
+        <script src="{{ url_for('static', filename='geometry_task.js') }}"></script>
+    {% endif %}
+    {% if block.type == "presentation" %}
+        <script src="{{ url_for('static', filename='presentation.js') }}"></script>
+    {% endif %}
+    <script src="{{ url_for('static', filename='markdown_render.js') }}"></script>
+</body>
+</html>
